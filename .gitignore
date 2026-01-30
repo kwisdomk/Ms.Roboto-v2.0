@@ -1,0 +1,45 @@
+# Mr. Roboto - Git Ignore File
+
+# Binaries (auto-downloaded)
+bin/
+!bin/.gitkeep
+
+# Downloads (user media)
+downloads/
+!downloads/.gitkeep
+
+# Logs (session logs)
+logs/
+!logs/.gitkeep
+
+# State (resume data)
+state/
+!state/.gitkeep
+
+# Cache (temporary files)
+cache/
+!cache/.gitkeep
+
+# Metadata (future feature)
+metadata/
+!metadata/.gitkeep
+
+# User configuration (may contain sensitive data)
+config.json
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# PowerShell
+*.ps1~
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
