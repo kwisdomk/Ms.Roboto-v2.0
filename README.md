@@ -45,14 +45,17 @@ A portable, self-healing PowerShell automation suite for high-fidelity media acq
    ```
 
 2. **Run Mr. Roboto**
-   ```powershell
-   .\roboto.ps1
-   ```
 
-That's it! On first run, Mr. Roboto will:
+   **Double-click `roboto.bat`** — that's it.
+
+   > ⚠️ **Always use `roboto.bat`**, not `roboto.ps1` directly.  
+   > The bat file handles the PowerShell execution policy automatically (process-scoped bypass — no system-wide changes).
+
+On first run, Mr. Roboto will:
 - Create necessary directories
 - Download yt-dlp and FFmpeg
 - Detect your GPU capabilities
+- **Prompt you to select a browser for YouTube cookie authentication**
 - Present the interactive menu
 
 ---
@@ -61,11 +64,7 @@ That's it! On first run, Mr. Roboto will:
 
 ### Interactive Mode
 
-Simply run the script and follow the prompts:
-
-```powershell
-.\roboto.ps1
-```
+Double-click **`roboto.bat`** and follow the prompts.
 
 You'll see:
 
@@ -163,8 +162,9 @@ Edit `config.json` to customize behavior:
 
 ```
 /MrRoboto/
-├── roboto.ps1              # Main script
-├── config.json             # Configuration
+├── roboto.bat              # ← Launch this (handles execution policy)
+├── roboto.ps1              # Core script (do not run directly)
+├── config.json             # Configuration (includes browserCookies setting)
 ├── README.md               # This file
 ├── /bin/                   # Auto-downloaded binaries
 │   ├── /x64/
@@ -230,11 +230,13 @@ Log levels:
 - Check your internet connection
 - Manually download from: https://github.com/BtbN/FFmpeg-Builds/releases
 
-### "Download failed"
-- Check the URL is valid
-- Try a different quality profile
-- Check `/logs/` for detailed error messages
-- Some sites may require cookies (Phase 3 feature)
+### "Download failed" / YouTube bot detection
+- Mr. Roboto will detect the bot-detection error automatically and re-prompt for browser cookies
+- Make sure you are **logged into YouTube** in the browser you select
+- Close the browser before running Mr. Roboto (some browsers lock the cookie database)
+- To change your browser choice, edit `config.json` → `settings.browserCookies`
+- Supported values: `chrome`, `firefox`, `edge`, `brave`, `vivaldi`, `opera`, `chromium`, `none`
+- Check `/logs/` for the full error output
 
 ### "GPU not detected"
 - Mr. Roboto will fallback to software encoding
@@ -251,6 +253,8 @@ Log levels:
 - [x] Interactive menu
 - [x] Quality profiles
 - [x] Resume capability
+- [x] Browser cookie authentication (YouTube bot detection bypass)
+- [x] Audio-only profiles (FLAC / Opus / MP3)
 
 ### 🚧 Phase 3: Library Mode (Next)
 - [ ] Thumbnail embedding

@@ -186,7 +186,7 @@ function Initialize-Config {
                 audioOnly    = $true
                 audioFormat  = "flac"
                 audioQuality = "0"
-                description  = "Lossless Archive — best source → FLAC (archival grade)"
+                description  = "Lossless Archive - best source to FLAC (archival grade)"
             }
             "audio-opus" = [ordered]@{
                 format       = "bestaudio[ext=webm]/bestaudio"
@@ -194,7 +194,7 @@ function Initialize-Config {
                 audioOnly    = $true
                 audioFormat  = "opus"
                 audioQuality = "0"
-                description  = "High-Fidelity — Opus native, zero re-encode (bit-perfect source)"
+                description  = "High-Fidelity - Opus native, zero re-encode (bit-perfect source)"
             }
             "audio-mp3"  = [ordered]@{
                 format       = "bestaudio"
@@ -202,7 +202,7 @@ function Initialize-Config {
                 audioOnly    = $true
                 audioFormat  = "mp3"
                 audioQuality = "320K"
-                description  = "Universal — MP3 320kbps (maximum device compatibility)"
+                description  = "Universal - MP3 320kbps (maximum device compatibility)"
             }
         }
         # Use quoted key access to survive ConvertFrom-Json round-trips
@@ -246,6 +246,10 @@ function Initialize-Environment {
 
     Initialize-Logging
     Write-Log "INFO" "Environment ready."
+
+    if (-not $script:Config.settings.PSObject.Properties['browserCookies']) {
+        Set-BrowserCookies
+    }
 }
 
 #endregion
@@ -559,6 +563,12 @@ function Start-MediaAcquisition {
         '--newline'
     )
 
+    $cookieBrowser = $script:Config.settings.PSObject.Properties['browserCookies']
+    if ($cookieBrowser -and $cookieBrowser.Value -ne 'none') {
+        $ytArgs.Add('--cookies-from-browser')
+        $ytArgs.Add($cookieBrowser.Value)
+    }
+
     if ($isAudioOnly) {
         # Audio-only path: extract + convert, no video muxing
         $ytArgs.Add('--extract-audio')
@@ -598,6 +608,59 @@ function Start-MediaAcquisition {
         # State file left intact so the user can resume
         Write-Host ""
         Write-Host "  ✘ Download failed. State saved for resume. Check logs for details." -ForegroundColor Red
+    }
+}
+
+#endregion
+
+# ══════════════════════════════════════════════════════════════════════════════
+#region  BROWSER COOKIES
+# ══════════════════════════════════════════════════════════════════════════════
+
+function Get-InstalledBrowsers {
+    $browsers = [ordered]@{
+        'chrome'   = "$env:LOCALAPPDATA\Google\Chrome\User Data"
+        'firefox'  = "$env:APPDATA\Mozilla\Firefox\Profiles"
+        'edge'     = "$env:LOCALAPPDATA\Microsoft\Edge\User Data"
+        'brave'    = "$env:LOCALAPPDATA\BraveSoftware\Brave-Browser\User Data"
+        'vivaldi'  = "$env:LOCALAPPDATA\Vivaldi\User Data"
+        'opera'    = "$env:APPDATA\Opera Software\Opera Stable"
+        'chromium' = "$env:LOCALAPPDATA\Chromium\User Data"
+    }
+    $found = @()
+    foreach ($name in $browsers.Keys) {
+        if (Test-Path $browsers[$name]) {
+            $found += $name
+        }
+    }
+    return $found
+}
+
+function Set-BrowserCookies {
+    $available = Get-InstalledBrowsers
+    if ($available.Count -eq 0) {
+        Write-Log "WARN" "No supported browsers detected. Skipping cookie setup."
+        return
+    }
+    Write-Host ""
+    Write-Host "  YouTube requires browser cookies to avoid bot detection." -ForegroundColor Yellow
+    Write-Host "  Select your browser:"
+    Write-Host ""
+    for ($i = 0; $i -lt $available.Count; $i++) {
+        Write-Host "  [$($i + 1)] $($available[$i])"
+    }
+    Write-Host "  [S] Skip"
+    Write-Host ""
+    $choice = (Read-Host "  Choice").Trim()
+    if ($choice -match '^\d+$' -and [int]$choice -ge 1 -and [int]$choice -le $available.Count) {
+        $selected = $available[[int]$choice - 1]
+        $script:Config.settings | Add-Member -NotePropertyName 'browserCookies' -NotePropertyValue $selected -Force
+        $script:Config | ConvertTo-Json -Depth 10 | Set-Content "$PSScriptRoot\config.json" -Encoding UTF8
+        Write-Log "INFO" "Browser cookies set: $selected"
+        Write-Host "  Cookie source set to: $selected" -ForegroundColor Green
+    }
+    else {
+        Write-Log "INFO" "Cookie setup skipped."
     }
 }
 
